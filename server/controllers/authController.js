@@ -84,27 +84,32 @@ module.exports = {
 // @access  Private (Requires Token)
 const saveConfiguration = async (req, res) => {
   try {
-    const { color, modelName, basePrice } = req.body;
-    
-    // req.user is set by our authMiddleware 
-    const user = await User.findById(req.user._id);
+    const { color, modelName, basePrice, details } = req.body;
 
-    if (user) {
-      const newConfig = {
-        modelName,
-        color,
-        basePrice,
-        savedAt: new Date()
-      };
+    const newConfig = {
+      modelName,
+      color,
+      basePrice,
+      details,
+      savedAt: new Date()
+    };
 
-      // Push the new configuration into the user's array 
-      user.savedConfigurations.push(newConfig);
-      await user.save();
+    // Use findByIdAndUpdate to push the data directly.
+    // This avoids re-validating the 'name' field of the User document.
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { $push: { savedConfigurations: newConfig } },
+      { new: true, runValidators: false } // This is the key fix
+    );
 
-      res.status(201).json({ message: 'Configuration saved successfully!', config: newConfig });
-    } else {
-      res.status(404).json({ message: 'User not found' });
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
     }
+
+    res.status(201).json({ 
+      message: 'Configuration saved successfully!', 
+      config: newConfig 
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
