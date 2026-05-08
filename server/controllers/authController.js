@@ -1,11 +1,11 @@
-const User = require('../models/User');
+const User = require('../models/User'); // Standardized to capital 'U'
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 // Helper function to generate a JWT token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d', // Token expires in 30 days
+    expiresIn: '30d',
   });
 };
 
@@ -15,17 +15,14 @@ const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create the user
     const user = await User.create({
       name,
       email,
@@ -54,10 +51,8 @@ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check for user email
     const user = await User.findOne({ email });
 
-    // Compare provided password with the hashed password in database
     if (user && (await bcrypt.compare(password, user.password))) {
       res.json({
         _id: user.id,
@@ -72,11 +67,6 @@ const loginUser = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
-
-module.exports = {
-  registerUser,
-  loginUser,
 };
 
 // @desc    Save a user's car configuration
@@ -94,12 +84,10 @@ const saveConfiguration = async (req, res) => {
       savedAt: new Date()
     };
 
-    // Use findByIdAndUpdate to push the data directly.
-    // This avoids re-validating the 'name' field of the User document.
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
       { $push: { savedConfigurations: newConfig } },
-      { new: true, runValidators: false } // This is the key fix
+      { new: true, runValidators: false } 
     );
 
     if (!updatedUser) {
@@ -115,8 +103,9 @@ const saveConfiguration = async (req, res) => {
   }
 };
 
+// ONE single export at the bottom
 module.exports = {
   registerUser,
   loginUser,
-  saveConfiguration, // Export the new function
+  saveConfiguration, 
 };
