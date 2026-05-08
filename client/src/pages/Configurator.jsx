@@ -34,7 +34,7 @@ const Configurator = () => {
       const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
       await axios.post(
-        'http://localhost:5000/api/auth/save-config',
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/save-config`,
         {
           modelName: 'AeroGT',
           color: carColor,
@@ -65,7 +65,7 @@ const Configurator = () => {
       const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
       await axios.post(
-        'http://localhost:5000/api/bookings',
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings`,
         {
           modelName: 'AeroGT',
           dealership,
@@ -101,7 +101,7 @@ const Configurator = () => {
       </div>
 
       {/* --- FRONTEND UI OVERLAY --- */}
-      {/* FIX: Changed from relative mt-20 to absolute inset-0 with pt-28 to perfectly fit the screen */}
+      {/* Using absolute inset-0 with precise padding to prevent overflow issues */}
       <div className="absolute inset-0 z-10 pointer-events-none flex justify-between pt-28 pb-12 px-8 md:px-12">
         
         {/* LEFT SIDE: Brand, Telemetry & Booking Trigger */}
@@ -125,7 +125,7 @@ const Configurator = () => {
               </div>
             </div>
 
-            {/* Test Drive Button - Now perfectly visible above the screen bottom! */}
+            {/* Test Drive Button */}
             <button 
               onClick={() => setShowBookingModal(true)}
               className="w-full px-8 py-4 bg-white text-black uppercase tracking-[0.2em] text-[10px] font-bold hover:bg-gray-200 transition-colors rounded-sm shadow-[0_0_20px_rgba(255,255,255,0.2)]"
@@ -137,7 +137,6 @@ const Configurator = () => {
 
         {/* RIGHT SIDE: Interactive Configurator Panel */}
         <div className="flex flex-col h-full w-[380px] pointer-events-auto">
-          {/* FIX: Added h-full and max-h-full to ensure it doesn't break boundaries */}
           <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl flex flex-col h-full max-h-[85vh]">
             
             {/* TABS HEADER */}
@@ -258,6 +257,7 @@ const Configurator = () => {
       </div>
 
       {/* --- BOOKING MODAL OVERLAY --- */}
+      {/* Fixed inset-0 ensures it completely overlays the entire browser window */}
       {showBookingModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-300 pointer-events-auto">
           <div className="bg-[#0a0a0a] border border-white/10 p-10 rounded-2xl max-w-md w-full relative shadow-2xl">
