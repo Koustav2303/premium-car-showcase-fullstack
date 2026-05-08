@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
+import * as THREE from 'three'; // Added to explicitly set the shadow map type
 import axios from 'axios';
 import Scene from '../three/Scene';
+import { sfx, switchEnvironmentAudio } from '../utils/audioManager';
 
 const Configurator = () => {
   // --- 3D SCENE STATES ---
@@ -20,8 +22,19 @@ const Configurator = () => {
   const [bookingDate, setBookingDate] = useState('');
   const [bookingStatus, setBookingStatus] = useState('');
 
+  // --- AUDIO ENGINE EFFECT ---
+  useEffect(() => {
+    switchEnvironmentAudio(environmentMap);
+    
+    return () => {
+      // Cleanup: Fade out all audio when leaving the page
+      switchEnvironmentAudio('none'); 
+    };
+  }, [environmentMap]);
+
   // --- HANDLERS ---
   const handleSaveConfiguration = async () => {
+    sfx.engine.play(); // Visceral reward for saving
     try {
       setSaveStatus('Authenticating & Saving...');
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -53,6 +66,7 @@ const Configurator = () => {
 
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
+    sfx.click.play();
     try {
       setBookingStatus('Scheduling...');
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -89,7 +103,8 @@ const Configurator = () => {
       
       {/* --- 3D RENDERING CANVAS --- */}
       <div className="absolute inset-0 z-0">
-        <Canvas shadows dpr={[1, 2]} gl={{ antialias: true, toneMappingExposure: 1.2 }}>
+        {/* FIX: Explicitly setting the shadow map type to clear the deprecation warning */}
+        <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 2]} gl={{ antialias: true, toneMappingExposure: 1.2 }}>
           <color attach="background" args={environmentMap === 'night' ? ['#020202'] : ['#111111']} />
           <Scene 
             carColor={carColor} 
@@ -101,7 +116,6 @@ const Configurator = () => {
       </div>
 
       {/* --- FRONTEND UI OVERLAY --- */}
-      {/* Using absolute inset-0 with precise padding to prevent overflow issues */}
       <div className="absolute inset-0 z-10 pointer-events-none flex justify-between pt-28 pb-12 px-8 md:px-12">
         
         {/* LEFT SIDE: Brand, Telemetry & Booking Trigger */}
@@ -127,7 +141,10 @@ const Configurator = () => {
 
             {/* Test Drive Button */}
             <button 
-              onClick={() => setShowBookingModal(true)}
+              onClick={() => {
+                sfx.click.play();
+                setShowBookingModal(true);
+              }}
               className="w-full px-8 py-4 bg-white text-black uppercase tracking-[0.2em] text-[10px] font-bold hover:bg-gray-200 transition-colors rounded-sm shadow-[0_0_20px_rgba(255,255,255,0.2)]"
             >
               Book Test Drive
@@ -144,7 +161,10 @@ const Configurator = () => {
               {['paint', 'accessories', 'scene'].map((tab) => (
                 <button 
                   key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => {
+                    sfx.click.play();
+                    setActiveTab(tab);
+                  }}
                   className={`flex-1 py-4 text-[10px] uppercase tracking-widest transition-all duration-300 ${activeTab === tab ? 'bg-white/10 text-white font-bold border-b-2 border-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                 >
                   {tab}
@@ -173,7 +193,10 @@ const Configurator = () => {
                       ].map((color) => (
                         <div key={color.hex} className="flex flex-col items-center gap-2">
                           <button 
-                            onClick={() => setCarColor(color.hex)} 
+                            onClick={() => {
+                              sfx.click.play();
+                              setCarColor(color.hex);
+                            }} 
                             style={{ backgroundColor: color.hex }}
                             className={`w-10 h-10 rounded-full border-2 shadow-inner transition-all duration-300 ${carColor === color.hex ? 'border-white scale-110 shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'border-white/20 hover:scale-105'}`}
                           />
@@ -193,8 +216,8 @@ const Configurator = () => {
                       <span className="text-white">{windowTint === 'dark' ? 'Limousine' : 'Standard'}</span>
                     </h3>
                     <div className="flex bg-black/40 p-1 rounded-lg">
-                      <button onClick={() => setWindowTint('clear')} className={`flex-1 py-2 text-xs rounded-md transition-all ${windowTint === 'clear' ? 'bg-white/20 text-white' : 'text-gray-500 hover:text-white'}`}>Clear</button>
-                      <button onClick={() => setWindowTint('dark')} className={`flex-1 py-2 text-xs rounded-md transition-all ${windowTint === 'dark' ? 'bg-white/20 text-white' : 'text-gray-500 hover:text-white'}`}>Dark Tint</button>
+                      <button onClick={() => { sfx.click.play(); setWindowTint('clear'); }} className={`flex-1 py-2 text-xs rounded-md transition-all ${windowTint === 'clear' ? 'bg-white/20 text-white' : 'text-gray-500 hover:text-white'}`}>Clear</button>
+                      <button onClick={() => { sfx.click.play(); setWindowTint('dark'); }} className={`flex-1 py-2 text-xs rounded-md transition-all ${windowTint === 'dark' ? 'bg-white/20 text-white' : 'text-gray-500 hover:text-white'}`}>Dark Tint</button>
                     </div>
                   </div>
 
@@ -204,7 +227,11 @@ const Configurator = () => {
                       <span className={headlightsOn ? "text-green-400" : "text-gray-500"}>{headlightsOn ? 'Active' : 'Off'}</span>
                     </h3>
                     <button 
-                      onClick={() => setHeadlightsOn(!headlightsOn)}
+                      onClick={() => {
+                        setHeadlightsOn(!headlightsOn);
+                        if (!headlightsOn) sfx.engine.play(); // Roar when turned on
+                        else sfx.click.play();
+                      }}
                       className={`w-full py-3 text-xs uppercase tracking-widest rounded-lg border transition-all duration-500 ${headlightsOn ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.4)]' : 'bg-transparent text-gray-400 border-white/20 hover:border-white/50'}`}
                     >
                       {headlightsOn ? 'Disable Optics' : 'Ignite Optics'}
@@ -219,15 +246,15 @@ const Configurator = () => {
                   <div>
                     <h3 className="uppercase tracking-widest text-[10px] text-gray-400 mb-4">Lighting Studio</h3>
                     <div className="space-y-3">
-                      <button onClick={() => setEnvironmentMap('studio')} className={`w-full p-4 flex flex-col items-start border rounded-xl transition-all ${environmentMap === 'studio' ? 'border-white bg-white/10' : 'border-white/10 hover:border-white/30'}`}>
+                      <button onClick={() => { sfx.click.play(); setEnvironmentMap('studio'); }} className={`w-full p-4 flex flex-col items-start border rounded-xl transition-all ${environmentMap === 'studio' ? 'border-white bg-white/10' : 'border-white/10 hover:border-white/30'}`}>
                         <span className="text-sm text-white mb-1">Clean Studio</span>
                         <span className="text-[10px] text-gray-500 uppercase tracking-widest">Bright neutral reflections</span>
                       </button>
-                      <button onClick={() => setEnvironmentMap('city')} className={`w-full p-4 flex flex-col items-start border rounded-xl transition-all ${environmentMap === 'city' ? 'border-white bg-white/10' : 'border-white/10 hover:border-white/30'}`}>
+                      <button onClick={() => { sfx.click.play(); setEnvironmentMap('city'); }} className={`w-full p-4 flex flex-col items-start border rounded-xl transition-all ${environmentMap === 'city' ? 'border-white bg-white/10' : 'border-white/10 hover:border-white/30'}`}>
                         <span className="text-sm text-white mb-1">Sunset Boulevard</span>
                         <span className="text-[10px] text-gray-500 uppercase tracking-widest">Warm dramatic lighting</span>
                       </button>
-                      <button onClick={() => setEnvironmentMap('night')} className={`w-full p-4 flex flex-col items-start border rounded-xl transition-all ${environmentMap === 'night' ? 'border-white bg-white/10' : 'border-white/10 hover:border-white/30'}`}>
+                      <button onClick={() => { sfx.click.play(); setEnvironmentMap('night'); }} className={`w-full p-4 flex flex-col items-start border rounded-xl transition-all ${environmentMap === 'night' ? 'border-white bg-white/10' : 'border-white/10 hover:border-white/30'}`}>
                         <span className="text-sm text-white mb-1">Midnight Run</span>
                         <span className="text-[10px] text-gray-500 uppercase tracking-widest">High contrast dark scene</span>
                       </button>
@@ -257,13 +284,15 @@ const Configurator = () => {
       </div>
 
       {/* --- BOOKING MODAL OVERLAY --- */}
-      {/* Fixed inset-0 ensures it completely overlays the entire browser window */}
       {showBookingModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-300 pointer-events-auto">
           <div className="bg-[#0a0a0a] border border-white/10 p-10 rounded-2xl max-w-md w-full relative shadow-2xl">
             
             <button 
-              onClick={() => setShowBookingModal(false)}
+              onClick={() => {
+                sfx.click.play();
+                setShowBookingModal(false);
+              }}
               className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors text-xl font-bold"
             >
               ✕

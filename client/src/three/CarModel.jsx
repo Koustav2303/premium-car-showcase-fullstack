@@ -3,29 +3,28 @@ import { useEffect } from 'react';
 import * as THREE from 'three';
 
 const CarModel = ({ carColor, windowTint, headlightsOn }) => {
-  // Add the Draco decoder path to the useGLTF hook. 
-  // This automatically fetches the necessary web workers from a CDN to decompress the model instantly.
-  const { scene, materials } = useGLTF('/models/car.glb', true, true, (loader) => {
-    const dracoLoader = new THREE.DRACOLoader();
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-    loader.setDRACOLoader(dracoLoader);
-  });
+  // Pass the Draco decoder URL directly as the second argument.
+  // @react-three/drei handles the instantiation under the hood automatically!
+  const { scene, materials } = useGLTF('/models/car.glb', 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
 
   useEffect(() => {
     if (!materials) return;
 
+    // 1. Exterior Paint
     if (materials['车漆']) {
       materials['车漆'].color.set(carColor);
       materials['车漆'].metalness = 0.7;
       materials['车漆'].roughness = 0.1;
-      materials['车漆'].clearcoat = 1.0;
+      materials['车漆'].clearcoat = 1.0; 
       materials['车漆'].clearcoatRoughness = 0.05;
     }
 
+    // 2. Dynamic Fallback Loop for Glass and Lights
     Object.keys(materials).forEach((key) => {
       const mat = materials[key];
       const name = key.toLowerCase();
 
+      // --- WINDOW TINT LOGIC ---
       if (name.includes('玻璃') || name.includes('glass') || name.includes('window')) {
         mat.transparent = true;
         if (windowTint === 'dark') {
@@ -34,17 +33,19 @@ const CarModel = ({ carColor, windowTint, headlightsOn }) => {
           mat.roughness = 0.0;
           mat.metalness = 0.1;
         } else {
+          // Clear glass
           mat.color.set('#ffffff');
           mat.opacity = 0.2;
           mat.roughness = 0.0;
         }
       }
 
+      // --- HEADLIGHTS (EMISSIVE) LOGIC ---
       if (name.includes('灯') || name.includes('light') || name.includes('emissive')) {
         if (headlightsOn) {
           mat.emissive = new THREE.Color('#ffffff');
-          mat.emissiveIntensity = 5;
-          mat.toneMapped = false;
+          mat.emissiveIntensity = 5; 
+          mat.toneMapped = false; 
         } else {
           mat.emissive = new THREE.Color('#000000');
           mat.emissiveIntensity = 0;
@@ -65,11 +66,7 @@ const CarModel = ({ carColor, windowTint, headlightsOn }) => {
   );
 };
 
-// Preload the model using the same decoder path
-useGLTF.preload('/models/car.glb', true, true, (loader) => {
-  const dracoLoader = new THREE.DRACOLoader();
-  dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-  loader.setDRACOLoader(dracoLoader);
-});
+// Preload the model using the exact same Draco CDN URL
+useGLTF.preload('/models/car.glb', 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
 
 export default CarModel;
