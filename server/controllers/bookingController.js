@@ -1,5 +1,5 @@
 const Booking = require('../models/Booking');
-const User = require('../models/user');
+const User = require('../models/User');
 
 // @desc    Create new test drive booking
 // @route   POST /api/bookings
